@@ -8,7 +8,48 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QFont
 
+from util.database import data_base, user, password, host, port
 
+# Connecting to the DataBase
+
+connection = psycopg2.connect(
+    dbname = data_base,
+    user = user,
+    password = password, # For development environment
+    host = host,
+    port = port
+)
+
+# Loading data from the database
+def load_employees(table):
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM employees ORDER BY id")
+
+    employees = cursor.fetchall()
+
+    cursor.close()
+
+    table.setRowCount(len(employees))
+    table.setColumnCount(5) # id, Nombre, Puesto, Salario, Botón para eliminar
+    table.setHorizontalHeaderLabels(['ID', 'Nombre', 'Puesto', 'Salario', 'Acción'])
+
+    for i, employee in enumerate(employees):
+        for j, column in enumerate(employee):
+            item = QTableWidgetItem(str(column))
+            item.setTextAlignment(Qt.AlignCenter)
+
+            table.setItem(i, j, item)
+
+        delete_button = QPushButton()
+        delete_button.setIcon(QIcon('delete.png'))
+        delete_button.setIconSize(QSize(24, 24))
+        delete_button.setFlat(True)
+
+        table.setCellWidget(i, 4, delete_button)
+
+
+
+# Main window
 def create_window():
 
     window = QWidget()
@@ -105,6 +146,9 @@ def create_window():
     layout.addWidget(table)
 
     window.setLayout(layout)
+
+    # Calling load_employees function
+    load_employees(table)
 
     window.show()
 

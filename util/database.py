@@ -1,0 +1,5 @@
+data_base = 'neondb'
+user = 'neondb_owner'
+password = 'npg_WtkO9rD6zXqs'
+host = 'ep-wispy-shape-ac050f7u-pooler.sa-east-1.aws.neon.tech'
+port = '5432'
