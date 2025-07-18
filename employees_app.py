@@ -20,6 +20,29 @@ connection = psycopg2.connect(
     port = port
 )
 
+# Saving the information in the database
+def save_employee(name_input, position_input, salary_input, table):
+    name = name_input.text() 
+    position = position_input.text()
+    salary = salary_input.text()
+
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO employees(name, position, salary) VALUES(%s, %s, %s)", 
+        (name, position, salary)
+        )
+    
+    connection.commit()
+    cursor.close()
+
+    name_input.clear()
+    position_input.clear()
+    salary_input.clear()
+
+    table.clearSelection()
+
+    load_employees(table)
+
 # Loading data from the database
 def load_employees(table):
     cursor = connection.cursor()
@@ -144,6 +167,8 @@ def create_window():
     table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
     layout.addWidget(table)
+
+    save_button.clicked.connect(lambda: save_employee(name_input, position_input, salary_input, table))
 
     window.setLayout(layout)
 
