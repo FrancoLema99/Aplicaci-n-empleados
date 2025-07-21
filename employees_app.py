@@ -20,16 +20,74 @@ connection = psycopg2.connect(
     port = port
 )
 
+
+# Function to delete records.
+def delete_by_id(id_employee, table):
+    answer = QMessageBox.question(
+        None, 'Eliminar registro.',
+        f'¿Estás seguro/a de eliminar al empleado con ID {id_employee}?',
+        QMessageBox.Yes | QMessageBox.No
+    )
+
+    if answer == QMessageBox.Yes:
+        cursor = connection.cursor()
+        cursor.execute(
+            "DELETE FROM employees WHERE id=%s",
+            (id_employee,)
+        )
+        connection.commit()
+        cursor.close()
+
+        for widget in table.parent().findChildren(QLineEdit):
+            widget.clear()
+
+        table.clearSelection()
+        table.setCurrentCell(-1, -1)
+
+        load_employees(table)
+
+
+
+# Selecting information
+def select_employee(table, name_input, position_input, salary_input):
+    
+    # Load row value
+    row = table.currentRow()
+
+    if row == -1:
+        return 
+        # Return to end the function
+
+    
+    name_input.setText(table.item(row, 1).text())
+    position_input.setText(table.item(row, 2).text())
+    salary_input.setText(table.item(row, 3).text())
+
+
 # Saving the information in the database
 def save_employee(name_input, position_input, salary_input, table):
     name = name_input.text() 
     position = position_input.text()
     salary = salary_input.text()
 
+    row = table.currentRow()
+
     cursor = connection.cursor()
-    cursor.execute(
-        "INSERT INTO employees(name, position, salary) VALUES(%s, %s, %s)", 
-        (name, position, salary)
+
+    if row != -1:
+        id_item = table.item(row, 0)
+
+        if id_item:
+            id_employee = id_item.text()
+            cursor.execute(
+                "UPDATE employees SET name=%s, position=%s, salary=%s WHERE id=%s", 
+                (name, position, salary, id_employee)
+            )
+
+    else:
+        cursor.execute(
+            "INSERT INTO employees(name, position, salary) VALUES(%s, %s, %s)", 
+            (name, position, salary)
         )
     
     connection.commit()
@@ -40,7 +98,7 @@ def save_employee(name_input, position_input, salary_input, table):
     salary_input.clear()
 
     table.clearSelection()
-
+    table.setCurrentCell(1, -1)
     load_employees(table)
 
 # Loading data from the database
@@ -67,10 +125,10 @@ def load_employees(table):
         delete_button.setIcon(QIcon('delete.png'))
         delete_button.setIconSize(QSize(24, 24))
         delete_button.setFlat(True)
-
+        delete_button.clicked.connect(
+            lambda _, id = employee[0]: delete_by_id(id, table)
+        )
         table.setCellWidget(i, 4, delete_button)
-
-
 
 # Main window
 def create_window():
@@ -168,7 +226,19 @@ def create_window():
 
     layout.addWidget(table)
 
-    save_button.clicked.connect(lambda: save_employee(name_input, position_input, salary_input, table))
+    # Save data
+    save_button.clicked.connect(
+        lambda: save_employee(
+            name_input, position_input, salary_input, table
+            )
+    )
+
+    # Select the row
+    table.cellClicked.connect(
+        lambda row, col: select_employee(
+            table, name_input, position_input, salary_input
+            )
+        )
 
     window.setLayout(layout)
 
